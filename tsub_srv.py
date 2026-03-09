@@ -1,0 +1,57 @@
+from fastapi import FastAPI, HTTPException, status, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+from decimal import Decimal
+from datetime import datetime
+
+
+app = FastAPI()
+
+# Настройка Jinja2 и статических файлов
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# Модель для ответов и хранения в базе данных
+class Facility(BaseModel):
+    sn: int = Field(..., description="Серийный номер узла")
+    name: str = Field(..., description="Название объекта")
+    addr: str | None = Field(default=None, description="Адрес объекта")
+
+class Sensor(BaseModel):
+    id: int = Field(default=-1, description="ID датчика")
+    name: str = Field(..., description="Название датчика")
+    sn: int = Field(..., description="Узел, к которому привязан датчик")
+    addr: int = Field(..., ge=9, le=128, description="I2C-адрес модуля")
+    input: int = Field(..., ge=0, le=7, description="Номер входа модуля")
+    readout: Decimal | None = Field(default=None, description="Показания датчика")
+    update_time: datetime | None = Field(default=None, description="Время последнего обновления показаний")
+
+# Инициализируем messages_db как список объектов Message
+facilities_db: list[Facility] = [Facility(sn=0, name="Офис ВН", addr="Великий Новгород, ул.Менделдеева, д.4а")]
+sensors_db: list[Sensor] = [Sensor(name="Датчик 1", sn=0, addr=10, input=0, readout=101.5)]
+
+# GET /messages: Возвращает весь список сообщений
+@app.get("/facilities", response_model=list[Facility])
+async def get_facilities() -> list[Facility]:
+    return facilities_db
+
+@app.get("/web/facilities", response_class=HTMLResponse)
+async def get_facilities_page(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "facilities": facilities_db})
+
+@app.get("/web/facilities/{sn}", response_class=HTMLResponse)
+async def get_facility_page(request: Request, sn: int):
+    for i, fclt in enumerate(facilities_db):
+        if fclt.sn == sn:
+            facility = facilities_db[i]
+            break
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Объект с заданным серийным номером не найден")
+
+    sensors = [sens for sens in sensors_db if sens.sn == facility.sn]
+    return templates.TemplateResponse("facility.html", {"request": request, "facility": facility, "sensors": sensors})
+

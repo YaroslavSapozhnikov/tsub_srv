@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Детали объекта</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Детали объекта "{{ facility.name }}"</h1>
+    <p><strong>Адрес:</strong> {{ facility.addr }}</p>
+    <h2>Датчики:</h2>
+    {% if sensors %}
+        <ul>
+        {% for sensor in sensors %}
+            {% if sensor.sn == facility.sn %}
+                <li>
+                    <a href="/web/facilities/{{ sensor.id }}">{{ sensor.name }}: </a> {{ sensor.readout }}
+                </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Датчики не подключены</p>
+    {% endif %}
+
+    <a href="/web/facilities">Вернуться к списку объектов</a>
+</body>
+</html>
+
