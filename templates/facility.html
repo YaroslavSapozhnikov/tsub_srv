@@ -4,26 +4,36 @@
     <meta charset="UTF-8">
     <title>Детали объекта</title>
     <link rel="stylesheet" href="/static/style.css">
+    <meta http-equiv="refresh" content="10">
 </head>
 <body>
     <h1>Детали объекта "{{ facility.name }}"</h1>
-    <p><strong>Адрес:</strong> {{ facility.addr }}</p>
-    <h2>Датчики:</h2>
-    {% if sensors %}
-        <ul>
-        {% for sensor in sensors %}
-            {% if sensor.sn == facility.sn %}
-                <li>
-                    <a href="/web/facilities/{{ sensor.id }}">{{ sensor.name }}: </a> {{ sensor.readout }}
-                </li>
-            {% endif %}
-        {% endfor %}
-        </ul>
+    <h3>Адрес:</h3>
+    <p>{{ facility.addr }}</p>
+    <h3>Датчики:</h3>
+    {% if facility.sensors %}
+        <table>
+            <thead>
+                <tr>
+                    <th> Название </th>
+                    <th> Адрес/Вход </th>
+                    <th> Ток (А) </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for sensor in facility.sensors %}
+                <tr>
+                    <td> <a href="/web/facility/{{ facility.sn }}">{{ sensor.name }} </a> </td>
+                    <td> {{ sensor.addr }} / {{ sensor.input }} </td>
+                    <td>  {{ sensor.readout }} </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p>Датчики не подключены</p>
     {% endif %}
-
+    <br>
     <a href="/web/facilities">Вернуться к списку объектов</a>
 </body>
 </html>
-

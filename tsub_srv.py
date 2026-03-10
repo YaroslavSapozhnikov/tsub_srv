@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException, status, Form, Request
+from fastapi import FastAPI, HTTPException, status, Form, Body, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from datetime import datetime
-
 
 app = FastAPI()
 
@@ -15,28 +14,46 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # Модель для ответов и хранения в базе данных
+class Sensor(BaseModel):
+    name: str = Field(..., description="Название датчика")
+    addr: int = Field(..., ge=9, le=128, description="I2C-адрес модуля")
+    input: int = Field(..., ge=0, le=7, description="Номер входа модуля")
+    readout: Decimal | None = Field(default=None, description="Показания датчика")
+
 class Facility(BaseModel):
     sn: int = Field(..., description="Серийный номер узла")
     name: str = Field(..., description="Название объекта")
     addr: str | None = Field(default=None, description="Адрес объекта")
-
-class Sensor(BaseModel):
-    id: int = Field(default=-1, description="ID датчика")
-    name: str = Field(..., description="Название датчика")
-    sn: int = Field(..., description="Узел, к которому привязан датчик")
-    addr: int = Field(..., ge=9, le=128, description="I2C-адрес модуля")
-    input: int = Field(..., ge=0, le=7, description="Номер входа модуля")
-    readout: Decimal | None = Field(default=None, description="Показания датчика")
+    sensors: list[Sensor] = Field(default=[], description="Список датчикоы объекта")
     update_time: datetime | None = Field(default=None, description="Время последнего обновления показаний")
 
 # Инициализируем messages_db как список объектов Message
-facilities_db: list[Facility] = [Facility(sn=0, name="Офис ВН", addr="Великий Новгород, ул.Менделдеева, д.4а")]
-sensors_db: list[Sensor] = [Sensor(name="Датчик 1", sn=0, addr=10, input=0, readout=101.5)]
+facilities_db: list[Facility] = [Facility(sn=0, name="Офис ВН", addr="Великий Новгород, ул.Менделдеева, д.4а",
+                                          sensors=[Sensor(name="Датчик 1", addr=10, input=0, readout=Decimal(101.5))])]
 
 # GET /messages: Возвращает весь список сообщений
 @app.get("/facilities", response_model=list[Facility])
 async def get_facilities() -> list[Facility]:
     return facilities_db
+
+@app.get("/facility/{sn}", response_model=Facility)
+async def put_facility(sn: int) -> Facility:
+    for i, fclt in enumerate(facilities_db):
+        if fclt.sn == sn:
+            return facilities_db[i]
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Объект с заданным серийным номером не найден")
+
+@app.put("/facility/{sn}", response_model=Facility)
+async def put_facility(sn: int, facility: Facility = Body(...)) -> Facility:
+    for i, fclt in enumerate(facilities_db):
+        if fclt.sn == sn:
+            facilities_db[i] = facility
+            return facilities_db[i]
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Объект с заданным серийным номером не найден")
 
 @app.get("/web/facilities", response_class=HTMLResponse)
 async def get_facilities_page(request: Request):
@@ -52,6 +69,4 @@ async def get_facility_page(request: Request, sn: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Объект с заданным серийным номером не найден")
 
-    sensors = [sens for sens in sensors_db if sens.sn == facility.sn]
-    return templates.TemplateResponse("facility.html", {"request": request, "facility": facility, "sensors": sensors})
-
+    return templates.TemplateResponse("facility.html", {"request": request, "facility": facility})
