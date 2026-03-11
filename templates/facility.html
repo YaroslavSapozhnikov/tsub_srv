@@ -8,8 +8,8 @@
 </head>
 <body>
     <h1>Детали объекта "{{ facility.name }}"</h1>
-    <h3>Адрес:</h3>
-    <p>{{ facility.addr }}</p>
+    <p><strong>Адрес: </strong>{{ facility.addr }}</p>
+    <p><strong>ID: </strong>{{ facility.id }}</p>
     <h3>Датчики:</h3>
     {% if facility.sensors %}
         <table>
@@ -23,7 +23,7 @@
             <tbody>
             {% for sensor in facility.sensors %}
                 <tr>
-                    <td> <a href="/web/facility/{{ facility.sn }}">{{ sensor.name }} </a> </td>
+                    <td> <a href="/web/facility/{{ facility.id }}">{{ sensor.name }} </a> </td>
                     <td> {{ sensor.addr }} / {{ sensor.input }} </td>
                     <td>  {{ sensor.readout }} </td>
                 </tr>
