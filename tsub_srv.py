@@ -52,8 +52,8 @@ async def put_facility(id: int, facility: Facility = Body(...)) -> Facility:
             facilities_db[i] = facility
             return facilities_db[i]
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Объект с заданным серийным номером не найден")
+        facilities_db.append(facility)
+        return facilities_db[-1]
 
 @app.get("/web/facilities", response_class=HTMLResponse)
 async def get_facilities_page(request: Request):
