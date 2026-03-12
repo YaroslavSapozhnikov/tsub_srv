@@ -21,15 +21,16 @@ class Sensor(BaseModel):
     readout: Decimal | None = Field(default=None, description="Показания датчика")
 
 class Facility(BaseModel):
-    id: int = Field(..., description="Серийный номер узла")
+    id: int = Field(..., description="Уникальный идентификатор объекта")
     name: str = Field(..., description="Название объекта")
     addr: str | None = Field(default=None, description="Адрес объекта")
     sensors: list[Sensor] = Field(default=[], description="Список датчикоы объекта")
     update_time: datetime | None = Field(default=None, description="Время последнего обновления показаний")
 
 # Инициализируем messages_db как список объектов Message
-facilities_db: list[Facility] = [Facility(id=0, name="Офис ВН", addr="Великий Новгород, ул.Менделдеева, д.4а",
-                                          sensors=[Sensor(name="Датчик 1", addr=10, input=0, readout=Decimal(101.5))])]
+facilities_db: list[Facility] = [Facility(id=0, name="Тестовый", addr="без адреса",
+                                          sensors=[Sensor(name="Датчик 1", addr=10, input=0, readout=Decimal(101.5))],
+                                          update_time=datetime.now().replace(microsecond=0))]
 
 # GET /messages: Возвращает весь список сообщений
 @app.get("/facilities", response_model=list[Facility])
