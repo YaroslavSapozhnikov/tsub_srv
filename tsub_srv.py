@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from decimal import Decimal
 from datetime import datetime
 
+from starlette.responses import RedirectResponse
+
 app = FastAPI()
 
 # Настройка Jinja2 и статических файлов
@@ -60,6 +62,14 @@ async def put_facility(id: int, facility: Facility = Body(...)) -> Facility:
 async def get_facilities_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "facilities": facilities_db})
 
+@app.get("/web/active_facilities", response_class=HTMLResponse)
+async def clear_facilities_page(request: Request):
+    for facility in facilities_db:
+        if (datetime.now() - facility.update_time).total_seconds() > 600:
+            facilities_db.remove(facility)
+    return RedirectResponse(url="/web/facilities", status_code=303)
+    return templates.TemplateResponse("index.html", {"request": request, "facilities": facilities_db})
+
 @app.get("/web/facilities/{id}", response_class=HTMLResponse)
 async def get_facility_page(request: Request, id: int):
     for i, fclt in enumerate(facilities_db):
@@ -71,3 +81,4 @@ async def get_facility_page(request: Request, id: int):
                             detail="Объект с заданным серийным номером не найден")
 
     return templates.TemplateResponse("facility.html", {"request": request, "facility": facility})
+

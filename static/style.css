@@ -1,6 +1,15 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
+
+    /* Путь к фоновому изображению */
+    background-image: url('tsub.jpg');
+    /* Повторять изображение по горизонтали и вертикали */
+    background-repeat: repeat;
+    /* Не изменять размер изображения (натуральная величина) */
+    background-size: auto;
+    /* Фиксировать фон при прокрутке (опционально) */
+    background-attachment: fixed;
 }
 
 table {
