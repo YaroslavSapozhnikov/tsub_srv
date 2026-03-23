@@ -1,0 +1,7 @@
+services:
+  tsub_srv:
+    image: yaroslavsapozhnikov/tsub_srv:latest
+    container_name: tsub_srv
+    ports:
+      - "8001:80"
+    restart: unless-stopped
