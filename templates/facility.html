@@ -2,39 +2,65 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Детали объекта</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ facility.name }} — Детали объекта</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <meta http-equiv="refresh" content="10">
 </head>
 <body>
-    <h1>Детали объекта "{{ facility.name }}"</h1>
-    <p><strong>Адрес: </strong>{{ facility.addr }}</p>
-    <p><strong>ID: </strong>{{ facility.id }}</p>
-    <h3>Датчики:</h3>
-    {% if facility.sensors %}
-        <table>
-            <thead>
-                <tr>
-                    <th> Название </th>
-                    <th> Адрес/Вход </th>
-                    <th> Ток (А) </th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for sensor in facility.sensors %}
-                <tr>
-                    <td> <a href="/web/facility/{{ facility.id }}">{{ sensor.name }} </a> </td>
-                    <td> {{ sensor.addr }} / {{ sensor.input }} </td>
-                    <td>  {{ sensor.readout }} </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        <p><strong>Последенее обновление показаний: </strong>{{ facility.update_time }}</p>
-    {% else %}
-        <p>Датчики не подключены</p>
-    {% endif %}
-    <br>
-    <a href="/web/facilities">Вернуться к списку объектов</a>
+    <div class="container">
+        <a href="/web/facilities" class="back-link">← Назад к списку</a>
+
+        <div class="header">
+            <div class="header-title">
+                <h1>{{ facility.name }}</h1>
+                <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-label">Адрес</div>
+                <div class="info-value">{{ facility.addr }}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">ID объекта</div>
+                <div class="info-value">#{{ facility.id }}</div>
+            </div>
+        </div>
+
+        <div class="section-title">Датчики</div>
+
+        {% if facility.sensors %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Адрес / Вход</th>
+                            <th>Ток (А)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sensor in facility.sensors %}
+                        <tr>
+                            <td>{{ sensor.name }}</td>
+                            <td>{{ sensor.addr }} / {{ sensor.input }}</td>
+                            <td><span class="current-value">{{ sensor.readout }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="update-time">Последнее обновление: {{ facility.update_time }}</div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔌</div>
+                <p>Датчики не подключены</p>
+            </div>
+        {% endif %}
+    </div>
 </body>
 </html>
