@@ -1,5 +1,6 @@
 services:
   tsub_srv:
+    build: .
     image: yaroslavsapozhnikov/tsub_srv:latest
     container_name: tsub_srv
     ports:
