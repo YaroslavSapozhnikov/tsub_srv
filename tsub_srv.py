@@ -1,3 +1,7 @@
+import logger
+from logger import app_logger, fclt_logger, FacilityLogger
+from environs import Env
+
 from fastapi import FastAPI, HTTPException, status, Form, Body, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -22,6 +26,7 @@ class Sensor(BaseModel):
     input: int = Field(..., ge=0, le=7, description="Номер входа модуля")
     readout: Decimal | None = Field(default=None, description="Показания датчика")
 
+
 class Facility(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор объекта")
     name: str = Field(..., description="Название объекта")
@@ -29,18 +34,23 @@ class Facility(BaseModel):
     sensors: list[Sensor] = Field(default=[], description="Список датчикоы объекта")
     update_time: datetime | None = Field(default=None, description="Время последнего обновления показаний")
 
-# Инициализируем messages_db как список объектов Message
-facilities_db: list[Facility] = [Facility(id=0, name="Тестовый", addr="без адреса",
+
+# Инициализируем messages_db как список объектов Faciliy
+facilities_db: list[Facility] = [Facility(id=1234567890, name="Тестовый", addr="без адреса",
                                           sensors=[Sensor(name="Датчик 1", addr=10, input=0, readout=Decimal(101.5))],
                                           update_time=datetime.now().replace(microsecond=0))]
 
-# GET /messages: Возвращает весь список сообщений
+for facility in facilities_db:
+    fclt_logger[facility.id] = FacilityLogger(facility)
+
+
 @app.get("/facilities", response_model=list[Facility])
 async def get_facilities() -> list[Facility]:
     return facilities_db
 
+
 @app.get("/facilities/{id}", response_model=Facility)
-async def put_facility(id: int) -> Facility:
+async def get_facility(id: int) -> Facility:
     for i, fclt in enumerate(facilities_db):
         if fclt.id == id:
             return facilities_db[i]
@@ -48,27 +58,36 @@ async def put_facility(id: int) -> Facility:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Объект с заданным серийным номером не найден")
 
+
 @app.put("/facilities/{id}", response_model=Facility)
 async def put_facility(id: int, facility: Facility = Body(...)) -> Facility:
     for i, fclt in enumerate(facilities_db):
         if fclt.id == id:
             facilities_db[i] = facility
+            fclt_logger[facility.id].readout(facility)
             return facilities_db[i]
     else:
         facilities_db.append(facility)
+        app_logger.info(f'Создан объект наблюдения id = {facility.id}')
+        fclt_logger[facility.id] = FacilityLogger(facility)
+        fclt_logger[facility.id].readout(facility)
         return facilities_db[-1]
+
 
 @app.get("/web/facilities", response_class=HTMLResponse)
 async def get_facilities_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "facilities": facilities_db})
 
+
 @app.get("/web/active_facilities", response_class=HTMLResponse)
 async def clear_facilities_page(request: Request):
     for facility in facilities_db:
         if (datetime.now() - facility.update_time).total_seconds() > 600:
+            logger.del_logger(facility.id)
             facilities_db.remove(facility)
     return RedirectResponse(url="/web/facilities", status_code=303)
-    return templates.TemplateResponse("index.html", {"request": request, "facilities": facilities_db})
+    # return templates.TemplateResponse("index.html", {"request": request, "facilities": facilities_db})
+
 
 @app.get("/web/facilities/{id}", response_class=HTMLResponse)
 async def get_facility_page(request: Request, id: int):
@@ -81,4 +100,5 @@ async def get_facility_page(request: Request, id: int):
                             detail="Объект с заданным серийным номером не найден")
 
     return templates.TemplateResponse("facility.html", {"request": request, "facility": facility})
+
 
