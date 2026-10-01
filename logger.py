@@ -2,12 +2,14 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 from environs import Env
+from time import time
 
 
 env = Env()
 env.read_env()
 
 APP_LOG_DIR = env.str("APP_LOG_DIR", default='Logs')  # Папка логов
+READOUT_INTERVAL = env.str("READOUT_INTERVAL", default=10)  # интервал записи показаний
 
 
 class FacilityLogger (object):
@@ -36,12 +38,17 @@ class FacilityLogger (object):
         self.logger.info('-' * (31 + 10 * len(facility.sensors)))
 
         self.logger_handler.setFormatter(logging.Formatter('|  %(asctime)s   |' + '%(message)s'))
+        self.last_readoud = 0
 
     def readout(self, facility):
+        now = time()
+        if now - self.last_readoud < READOUT_INTERVAL:
+            return
         s = ''
         for sens in facility.sensors:
             s = s + f' {sens.readout}'.ljust(10) + '|'
         self.logger.info(s)
+        self.last_readoud = now
 
 
 def del_logger(id):
