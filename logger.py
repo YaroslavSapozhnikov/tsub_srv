@@ -42,7 +42,7 @@ class FacilityLogger (object):
 
     def readout(self, facility):
         now = time()
-        if now - self.last_readoud < READOUT_INTERVAL:
+        if now - self.last_readoud < float(READOUT_INTERVAL):
             return
         s = ''
         for sens in facility.sensors:
