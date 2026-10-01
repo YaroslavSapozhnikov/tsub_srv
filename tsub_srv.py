@@ -34,14 +34,22 @@ class Facility(BaseModel):
     sensors: list[Sensor] = Field(default=[], description="Список датчикоы объекта")
     update_time: datetime | None = Field(default=None, description="Время последнего обновления показаний")
 
+    def __eq__(self, other):
+        if isinstance(other, Facility):
+            if (self.id != other.id or
+                self.name != other.name or
+                self.addr != other.addr or
+                len(self.sensors) != len(other.sensors)):
+                return False
+            for i in range(len(self.sensors)):
+                if (self.sensors[i].name != other.sensors[i].name or
+                    self.sensors[i].addr != other.sensors[i].addr or
+                    self.sensors[i].input != other.sensors[i].input):
+                    return False
+        return True
 
-# Инициализируем messages_db как список объектов Faciliy
-facilities_db: list[Facility] = [Facility(id=1234567890, name="Тестовый", addr="без адреса",
-                                          sensors=[Sensor(name="Датчик 1", addr=10, input=0, readout=Decimal(101.5))],
-                                          update_time=datetime.now().replace(microsecond=0))]
-
-for facility in facilities_db:
-    fclt_logger[facility.id] = FacilityLogger(facility)
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 @app.get("/facilities", response_model=list[Facility])
@@ -63,13 +71,16 @@ async def get_facility(id: int) -> Facility:
 async def put_facility(id: int, facility: Facility = Body(...)) -> Facility:
     for i, fclt in enumerate(facilities_db):
         if fclt.id == id:
+            if fclt != facility:
+                logger.del_logger(facility.id)
+                fclt_logger[facility.id] = FacilityLogger(facility)
+                app_logger.info(f'Изменена конфигурация объекта id = {facility.id}')
             facilities_db[i] = facility
             fclt_logger[facility.id].readout(facility)
             return facilities_db[i]
     else:
         facilities_db.append(facility)
         app_logger.info(f'Создан объект наблюдения id = {facility.id}')
-        fclt_logger[facility.id] = FacilityLogger(facility)
         fclt_logger[facility.id].readout(facility)
         return facilities_db[-1]
 
@@ -83,6 +94,7 @@ async def get_facilities_page(request: Request):
 async def clear_facilities_page(request: Request):
     for facility in facilities_db:
         if (datetime.now() - facility.update_time).total_seconds() > 600:
+            app_logger.info(f'Удален объект наблюдения id = {facility.id}')
             logger.del_logger(facility.id)
             facilities_db.remove(facility)
     return RedirectResponse(url="/web/facilities", status_code=303)
@@ -100,5 +112,14 @@ async def get_facility_page(request: Request, id: int):
                             detail="Объект с заданным серийным номером не найден")
 
     return templates.TemplateResponse("facility.html", {"request": request, "facility": facility})
+
+
+# Инициализируем messages_db как список объектов Faciliy
+facilities_db: list[Facility] = [Facility(id=1234567890, name="Тестовый", addr="без адреса",
+                                          sensors=[Sensor(name="Датчик 1", addr=10, input=0, readout=Decimal(101.5))],
+                                          update_time=datetime.now().replace(microsecond=0))]
+
+for facility in facilities_db:
+    fclt_logger[facility.id] = FacilityLogger(facility)
 
 

@@ -22,6 +22,7 @@ class FacilityLogger (object):
                                                        backupCount=30)
         self.logger.addHandler(self.logger_handler)
         self.logger.setLevel(logging.DEBUG)
+        self.logger_handler.setFormatter(logging.Formatter('%(message)s'))
         self.logger.info(f'\nМониторинг объекта "{facility.name}"  (ID: {facility.id})')
         self.logger.info(f'    Адрес: {facility.addr}')
         self.logger.info(f'    Линии:')
@@ -45,6 +46,8 @@ class FacilityLogger (object):
 
 def del_logger(id):
     if id in fclt_logger.keys():
+        fclt_logger[id].logger.handlers.clear()
+        fclt_logger[id].logger.propagate = False
         fclt_logger.pop(id)
 
 
