@@ -81,6 +81,7 @@ async def put_facility(id: int, facility: Facility = Body(...)) -> Facility:
     else:
         facilities_db.append(facility)
         app_logger.info(f'Создан объект наблюдения id = {facility.id}')
+        fclt_logger[facility.id] = FacilityLogger(facility)
         fclt_logger[facility.id].readout(facility)
         return facilities_db[-1]
 
