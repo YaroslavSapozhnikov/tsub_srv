@@ -1,7 +1,7 @@
 services:
   tsub_srv:
     build: .
-    user: "1202:65564"
+  #  user: "1202:65564"
     volumes:
       - /volume1/tsub/Logs:/app/Logs
     image: yaroslavsapozhnikov/tsub_srv:latest
